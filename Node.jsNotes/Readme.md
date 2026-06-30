@@ -88,3 +88,78 @@ console.log("Hello from Node.js!");
 node hello.js
 # Output: Hello from Node.js!
 ```
+
+# Sync vs Async | Blocking vs Non-Blocking | Event Loop
+ 
+---
+ 
+## 🧠 The Flow (memorize this picture)
+ 
+```
+JS Code → Call Stack (Main Thread, 1 worker)
+              ↓ (slow task? hand it off)
+        Node APIs → libuv Thread Pool (4 background workers)
+              ↓ (task done)
+        Callback Queue (waits in line)
+              ↓
+        Event Loop ("Is Call Stack empty? Push next callback")
+              ↓
+        Back to Call Stack → runs → done
+```
+ 
+---
+ 
+## ⚡ Quick Definitions
+ 
+| Term | One-liner |
+|---|---|
+| **Main Thread** | The single thread running your JS, one line at a time |
+| **Call Stack** | Where current code executes, top to bottom |
+| **Synchronous** | Waits for each line to finish before next runs |
+| **Asynchronous** | Starts task, moves on immediately, comes back later |
+| **Blocking** | Main thread frozen until task finishes (bad) |
+| **Non-Blocking** | Main thread free while slow task runs elsewhere (good) |
+| **libuv** | C++ library, runs slow tasks in background threads |
+| **Thread Pool** | 4 background threads (default) doing the slow work |
+| **Callback Queue** | Finished async tasks wait here for their turn |
+| **Event Loop** | Loop that checks: stack empty? → push next callback |
+ 
+---
+ 
+## 🔑 The ONE Rule to Remember
+ 
+> **Event Loop NEVER runs a callback while Call Stack still has code running — no matter how small the delay (even `setTimeout(fn, 0)`).**
+ 
+---
+ 
+## 💻 Code Proof
+ 
+```javascript
+console.log("1");
+setTimeout(() => console.log("2"), 0);
+console.log("3");
+ 
+// Output: 1, 3, 2
+// "2" always waits, even with 0ms delay
+```
+ 
+```javascript
+console.log("Start");
+setTimeout(() => console.log("Done"), 5000);
+console.log("End");
+ 
+// Output: Start → End → Done
+// Doesn't wait 5 sec before moving to "End"
+```
+ 
+---
+ 
+## 🍽️ The Waiter Analogy
+ 
+- **Blocking** = 1 waiter stands at your table until your food is cooked (others wait)
+- **Non-Blocking** = 1 waiter takes your order, serves other tables, comes back when food's ready
+---
+
+> "Node.js runs JS on a single main thread. For slow tasks like file reads or DB queries, it hands them to libuv's background thread pool instead of blocking. When done, the callback goes to the callback queue. The Event Loop checks if the call stack is empty, then pushes the next callback to run. This lets Node handle thousands of requests with just one main thread."
+ 
+---
