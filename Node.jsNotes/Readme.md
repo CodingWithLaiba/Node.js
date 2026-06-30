@@ -21,9 +21,9 @@ This is a common misconception:
 
 | Misconception | Reality |
 |---|---|
-| Node.js is a programming language | ❌ Wrong — JavaScript is the language |
-| Node.js is a framework | ❌ Wrong — it's a runtime environment |
-| Node.js runs inside a browser | ❌ Wrong — it runs on the server |
+| Node.js is a programming language |  Wrong — JavaScript is the language |
+| Node.js is a framework | Wrong — it's a runtime environment |
+| Node.js runs inside a browser | Wrong — it runs on the server |
 
  Node.js is a **runtime** that lets JavaScript run on the server using Chrome's V8 engine.
 
@@ -58,9 +58,9 @@ Node.js = runtime for backend JavaScript
 | Feature | Browser JS | Node.js |
 |---|---|---|
 | Runs in | Browser | Server / Terminal |
-| Can access DOM | ✅ Yes | ❌ No (no browser, no DOM) |
-| Can read/write files | ❌ No | ✅ Yes (using `fs` module) |
-| Can access HTTP | Limited | ✅ Full control |
+| Can access DOM | Yes |  No (no browser, no DOM) |
+| Can read/write files | No |  Yes (using `fs` module) |
+| Can access HTTP | Limited |  Full control |
 | Global object | `window` | `global` |
 | Module system | ES Modules (`import`) | CommonJS (`require`) or ES Modules |
 
@@ -93,7 +93,7 @@ node hello.js
  
 ---
  
-## 🧠 The Flow (memorize this picture)
+## The Flow (memorize this picture)
  
 ```
 JS Code → Call Stack (Main Thread, 1 worker)
@@ -109,7 +109,7 @@ JS Code → Call Stack (Main Thread, 1 worker)
  
 ---
  
-## ⚡ Quick Definitions
+## Quick Definitions
  
 | Term | One-liner |
 |---|---|
@@ -126,13 +126,13 @@ JS Code → Call Stack (Main Thread, 1 worker)
  
 ---
  
-## 🔑 The ONE Rule to Remember
+## The ONE Rule to Remember
  
 > **Event Loop NEVER runs a callback while Call Stack still has code running — no matter how small the delay (even `setTimeout(fn, 0)`).**
  
 ---
  
-## 💻 Code Proof
+##  Code Proof
  
 ```javascript
 console.log("1");
@@ -154,7 +154,7 @@ console.log("End");
  
 ---
  
-## 🍽️ The Waiter Analogy
+## The Waiter Analogy
  
 - **Blocking** = 1 waiter stands at your table until your food is cooked (others wait)
 - **Non-Blocking** = 1 waiter takes your order, serves other tables, comes back when food's ready
