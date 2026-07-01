@@ -19,7 +19,7 @@ app.post("/api/users", (req, res) => {
   const body = req.body;
   users.push({ ...body, id: users.length + 1 });
   fs.writeFile("./MOCK_DATA.json", JSON.stringify(users), (err, data) => {
-    return res.json({ status: "success", id: users.length });
+    return res.status(201).json({ status: "success", id: users.length });
   });
 });
 app
@@ -27,6 +27,7 @@ app
   .get((req, res) => {
     const id = Number(req.params.id);
     const user = users.find((user) => user.id === id);
+    if (!user) return res.status(404).json({ message: "user not found" });
     return res.json(user);
   })
   .patch((req, res) => {
@@ -35,15 +36,15 @@ app
     const body = req.body;
     const userIndex = users.findIndex((user) => user.id === id);
     users[userIndex] = { ...users[userIndex], ...body };
-    fs.writeFile("./MOCK_DATA.json", JSON.stringify(users), (err,data) => {
+    fs.writeFile("./MOCK_DATA.json", JSON.stringify(users), (err, data) => {
       return res.json({ status: "success", updatedUser: users[userIndex] });
     });
   })
   .delete((req, res) => {
     const id = Number(req.params.id);
     const userIndex = users.findIndex((user) => user.id === id);
-    users.splice(userIndex,1)
-    fs.writeFile("./MOCK_DATA.json", JSON.stringify(users), (err,data) => {
+    users.splice(userIndex, 1);
+    fs.writeFile("./MOCK_DATA.json", JSON.stringify(users), (err, data) => {
       return res.json({ status: "success", message: "User deleted" });
     });
   });
