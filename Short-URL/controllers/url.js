@@ -9,6 +9,7 @@ async function handleGenerateVewShortURL(req, res) {
     shortID: shortID,
     redirectURL: body.url,
     visitHistory: [],
+    createdBy:req.user._id,
   });
   const allUrls = await URL.find({});
 
