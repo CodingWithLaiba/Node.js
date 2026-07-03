@@ -464,3 +464,443 @@ const contentType = req.headers["content-type"];
 const token = req.headers["authorization"];
 ```
 ---
+# 08 — Authentication | Stateful vs Stateless
+---
+
+## What is Authentication?
+
+Authentication is the process of **verifying who a user is**.
+
+- User sends credentials (email + password)
+- Server checks if they are correct
+- If correct → user is allowed in
+- If wrong → access denied
+
+> Authentication = "Who are you?"
+> Authorization = "What are you allowed to do?" 
+
+---
+
+## Two Ways to Handle Authentication
+
+---
+
+## 1. Stateful Authentication (Session-Based)
+
+The server **remembers** the user after login by storing their session.
+
+### How it works:
+```
+1. User logs in with email + password
+2. Server verifies credentials
+3. Server creates a SESSION and stores it (in memory or database)
+4. Server sends back a SESSION ID to the client (stored in a cookie)
+5. On every next request, client sends that cookie
+6. Server looks up the session ID → finds the user → allows access
+```
+
+### Diagram:
+```
+Client                        Server
+  |                              |
+  |--- POST /login ------------->|
+  |    { email, password }       |
+  |                              | creates session, stores in DB
+  |<-- Set-Cookie: sessionId=abc-|
+  |                              |
+  |--- GET /dashboard ---------->|
+  |    Cookie: sessionId=abc     |
+  |                              | looks up sessionId in DB → found
+  |<-- 200 OK (dashboard data) --|
+```
+
+### Key Points:
+- Server stores session → server has to **remember** the user
+- Session stored in server memory or database
+- Cookie carries only the session ID (not the actual user data)
+- If server restarts → sessions can be lost
+- Hard to scale — if you have multiple servers, they need to share session storage
+
+---
+
+## 2. Stateless Authentication (Token-Based / JWT)
+
+The server **does not remember** anything. Instead, it gives the user a **token** that contains all the user's information. The user sends this token with every request.
+
+### How it works:
+```
+1. User logs in with email + password
+2. Server verifies credentials
+3. Server creates a TOKEN (JWT) containing user info, signs it, sends it back
+4. Client stores token (in localStorage or memory)
+5. On every next request, client sends the token in the Authorization header
+6. Server verifies the token signature → no DB lookup needed → allows access
+```
+
+### Diagram:
+```
+Client                        Server
+  |                              |
+  |--- POST /login ------------->|
+  |    { email, password }       |
+  |                              | creates JWT token, does NOT store it
+  |<-- { token: "eyJ..." } ------|
+  |                              |
+  |--- GET /dashboard ---------->|
+  |    Authorization: Bearer eyJ |
+  |                              | verifies token signature → valid
+  |<-- 200 OK (dashboard data) --|
+```
+
+### Key Points:
+- Server stores NOTHING → completely stateless
+- All user info is inside the token itself
+- Token is signed (not encrypted) — server can verify it without DB lookup
+- If token is stolen → attacker has access until token expires
+- Easy to scale — any server can verify the token (no shared storage needed)
+
+---
+
+## What is JWT?
+
+JWT = **JSON Web Token**
+
+A JWT has 3 parts separated by dots:
+```
+eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MX0.abc123signature
+      HEADER              PAYLOAD        SIGNATURE
+```
+
+| Part | Contains |
+|---|---|
+| Header | Algorithm used to sign the token |
+| Payload | User data (id, email, role) — NOT secret, just encoded |
+| Signature | Proof the token hasn't been tampered with |
+
+### Creating a JWT (example):
+```javascript
+const jwt = require("jsonwebtoken");
+
+const token = jwt.sign(
+  { id: user.id, email: user.email },  // payload
+  "mySecretKey",                        // secret key
+  { expiresIn: "1d" }                  // expires in 1 day
+);
+```
+
+### Verifying a JWT:
+```javascript
+const decoded = jwt.verify(token, "mySecretKey");
+console.log(decoded); // { id: 1, email: "ali@email.com" }
+```
+
+---
+
+## Stateful vs Stateless — Side by Side
+
+| | Stateful (Session) | Stateless (JWT) |
+|---|---|---|
+| Server stores data? | ✅ Yes (session in DB) | ❌ No |
+| What client stores | Session ID (cookie) | Token (localStorage) |
+| Logout mechanism | Delete session from DB | Token just expires |
+| Scaling | Hard (shared session needed) | Easy (any server can verify) |
+| Performance | Slower (DB lookup every request) | Faster (no DB lookup) |
+| Used in | Traditional web apps | REST APIs, MERN apps |
+
+---
+
+## Which One Does MERN Use?
+
+**MERN uses Stateless (JWT)** — because:
+- React frontend and Node backend are separate
+- Cookies are harder to manage across different origins
+- JWT works perfectly with REST APIs
+- Stateless = easy to scale
+
+---
+# 09 — Cookies
+> 📺 Master NodeJS by Piyush Garg
+
+---
+
+## What is a Cookie?
+
+A cookie is a **small piece of data** that the server sends to the browser, and the browser **automatically stores it and sends it back** with every request to that server.
+
+> Think of a cookie like a stamp on your hand at an event — the server stamps you once, and you show that stamp every time you enter.
+
+---
+
+## Why Are Cookies Used?
+
+HTTP is stateless — it doesn't remember who you are between requests. Cookies solve this by storing small pieces of information on the client side that get sent automatically with every request.
+
+Common uses:
+- Keeping users logged in (session ID)
+- Remembering user preferences
+- Tracking (analytics)
+
+---
+
+## How Cookies Work — Step by Step
+
+```
+1. Client sends a request (e.g. login)
+2. Server verifies and creates a cookie
+3. Server sends response with: Set-Cookie: token=abc123
+4. Browser stores the cookie automatically
+5. On EVERY next request to that server, browser sends: Cookie: token=abc123
+6. Server reads the cookie and identifies the user
+```
+
+### Diagram:
+```
+Client                          Server
+  |                                |
+  |--- POST /login --------------->|
+  |                                | sets cookie
+  |<-- Set-Cookie: token=abc123 ---|
+  |    (browser stores it)         |
+  |                                |
+  |--- GET /dashboard ------------>|
+  |    Cookie: token=abc123        | reads cookie → identifies user
+  |<-- 200 OK ---------------------|
+```
+
+---
+
+## Setting Up Cookies in Express
+
+### Install cookie-parser:
+```bash
+npm install cookie-parser
+```
+
+### Setup:
+```javascript
+const express = require("express");
+const cookieParser = require("cookie-parser");
+
+const app = express();
+app.use(cookieParser()); // middleware to read cookies
+```
+
+---
+
+## Setting a Cookie (Server → Client)
+
+```javascript
+app.post("/login", (req, res) => {
+  // after verifying user...
+  res.cookie("token", "abc123", {
+    httpOnly: true,   // cannot be accessed by JavaScript in browser
+    secure: true,     // only sent over HTTPS
+    maxAge: 24 * 60 * 60 * 1000, // expires in 1 day (in milliseconds)
+  });
+  return res.json({ status: "success", message: "Logged in" });
+});
+```
+
+---
+
+## Reading a Cookie (on next request)
+
+```javascript
+app.get("/dashboard", (req, res) => {
+  const token = req.cookies.token; // read cookie by name
+  console.log(token); // "abc123"
+
+  if (!token) {
+    return res.status(401).json({ message: "Not logged in" });
+  }
+  return res.json({ message: "Welcome to dashboard" });
+});
+```
+
+---
+
+## Deleting a Cookie (Logout)
+
+```javascript
+app.post("/logout", (req, res) => {
+  res.clearCookie("token"); // removes the cookie
+  return res.json({ status: "success", message: "Logged out" });
+});
+```
+
+---
+
+## Cookie Options Explained
+
+| Option | Meaning |
+|---|---|
+| `httpOnly: true` | Cookie cannot be read by JavaScript in browser — protects from XSS attacks |
+| `secure: true` | Cookie only sent over HTTPS — never over HTTP |
+| `maxAge` | How long cookie lives in milliseconds |
+| `expires` | Exact date/time cookie expires |
+| `sameSite` | Controls if cookie is sent with cross-site requests |
+| `signed: true` | Cookie is signed — server can verify it wasn't tampered with |
+
+---
+
+## Signed Cookies — Extra Security
+
+A signed cookie has a signature attached, so if someone tries to modify it, the server detects it.
+
+```javascript
+// setup — pass a secret key to cookieParser
+app.use(cookieParser("mySecretKey"));
+
+// set a signed cookie
+res.cookie("token", "abc123", { signed: true });
+
+// read a signed cookie
+const token = req.signedCookies.token; // note: signedCookies not cookies
+```
+
+---
+
+## Cookie vs localStorage vs sessionStorage
+
+| | Cookie | localStorage | sessionStorage |
+|---|---|---|---|
+| Sent with requests? | ✅ Automatically | ❌ Manual | ❌ Manual |
+| Accessible in JS? | Only if httpOnly is false | ✅ Yes | ✅ Yes |
+| Expires | Set by server | Never (manual clear) | When tab closes |
+| Size limit | ~4KB | ~5MB | ~5MB |
+| Used for | Auth sessions | JWT tokens | Temporary data |
+
+---
+
+## Cookie vs JWT — When to Use Which
+
+| | Cookie | JWT in Header |
+|---|---|---|
+| Storage | Browser (automatic) | localStorage (manual) |
+| Sent automatically? | ✅ Yes | ❌ Must add to header manually |
+| Works cross-origin? | Needs configuration | ✅ Easy |
+| CSRF risk? | ✅ Yes (needs protection) | ❌ No |
+| XSS risk? | Low (httpOnly) | Higher (in localStorage) |
+| Best for | Traditional web apps | REST APIs / MERN |
+
+---
+
+## Full Example — Login, Read, Logout
+
+```javascript
+const express = require("express");
+const cookieParser = require("cookie-parser");
+const app = express();
+
+app.use(express.json());
+app.use(cookieParser());
+
+// LOGIN — set cookie
+app.post("/login", (req, res) => {
+  const { email, password } = req.body;
+  // assume credentials are correct...
+  res.cookie("userId", "123", {
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+  });
+  return res.json({ message: "Logged in successfully" });
+});
+
+// PROTECTED ROUTE — read cookie
+app.get("/profile", (req, res) => {
+  const userId = req.cookies.userId;
+  if (!userId) {
+    return res.status(401).json({ message: "Please login first" });
+  }
+  return res.json({ message: `Welcome user ${userId}` });
+});
+
+// LOGOUT — clear cookie
+app.post("/logout", (req, res) => {
+  res.clearCookie("userId");
+  return res.json({ message: "Logged out successfully" });
+});
+
+app.listen(5000, () => console.log("Server running"));
+```
+---
+# 10 — Authorization
+> 📺 Master NodeJS by Piyush Garg
+
+---
+
+## Authentication vs Authorization — The Core Difference
+
+These two words are often confused. They are completely different things.
+
+```
+Authentication = WHO are you?     (proving your identity — login)
+Authorization  = WHAT can you do? (checking your permissions — access control)
+```
+
+### Real Life Analogy:
+```
+You go to a hospital:
+
+Authentication → Show your ID card at the front desk
+                 "Yes, you are Ali Khan" ✅
+
+Authorization  → Ali Khan is a patient, not a doctor
+                 "You can see your own records, but NOT other patients records"
+                 "You CANNOT enter the surgery room" ❌
+```
+
+### In a CRM Example:
+```
+Authentication → You log in with email + password
+                 Server confirms: "Yes, this is Laiba" ✅
+
+Authorization  → Laiba has role: "sales_agent"
+                 ✅ Can view customer list
+                 ✅ Can create new deals
+                 ❌ Cannot delete users
+                 ❌ Cannot access admin dashboard
+```
+
+---
+
+## Simple Breakdown
+
+| | Authentication | Authorization |
+|---|---|---|
+| Question | Who are you? | What can you do? |
+| When | At login | After login, on every request |
+| Uses | Email + password, JWT | Roles, permissions |
+| Fails with | 401 Unauthorized | 403 Forbidden |
+| Example | Login with correct password | Admin-only route access |
+
+> 401 = "I don't know who you are — please login"
+> 403 = "I know who you are — but you're not allowed here"
+
+---
+
+## How Authorization Works in Node.js
+
+Authorization is usually handled using **Middleware** — a function that runs before the route handler and checks if the user has permission.
+
+## The Flow Visualized
+
+```
+Request comes in
+      ↓
+authenticate() middleware
+      ↓
+Is token valid?
+  NO  → 401 Unauthorized (not logged in)
+  YES → attach user to req.user → continue
+      ↓
+authorize("admin") middleware
+      ↓
+Is role correct?
+  NO  → 403 Forbidden (logged in but not allowed)
+  YES → continue to route handler
+      ↓
+Route handler runs → sends response
+```
+
+---
