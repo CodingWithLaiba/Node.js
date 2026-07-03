@@ -376,3 +376,91 @@ Body: { "id": 5, "name": "Ali", "email": "ali@email.com" }
 - Language-independent — frontend in React, backend in Node, mobile app in Flutter — all can talk to the same REST API
 
 ---
+# — Status Codes & Headers
+
+
+## Status Codes
+
+A status code is a **3-digit number** sent back in every HTTP response. It tells the client what happened with their request.
+
+### 2xx — Success
+| Code | Meaning | When to use |
+|---|---|---|
+| 200 | OK | Successful GET, PATCH, PUT |
+| 201 | Created | Successful POST (new resource created) |
+| 204 | No Content | Successful DELETE (nothing to return) |
+
+### 3xx — Redirection
+| Code | Meaning | When to use |
+|---|---|---|
+| 301 | Moved Permanently | URL changed forever |
+| 302 | Found | Temporary redirect |
+
+### 4xx — Client Errors (user/request did something wrong)
+| Code | Meaning | When to use |
+|---|---|---|
+| 400 | Bad Request | Invalid or missing data in request |
+| 401 | Unauthorized | User not logged in |
+| 403 | Forbidden | Logged in but not allowed |
+| 404 | Not Found | Resource or route doesn't exist |
+| 409 | Conflict | Duplicate data (e.g. email already exists) |
+| 422 | Unprocessable | Validation failed |
+
+### 5xx — Server Errors (something broke on the backend)
+| Code | Meaning | When to use |
+|---|---|---|
+| 500 | Internal Server Error | Unexpected server crash |
+| 503 | Service Unavailable | Server is down or overloaded |
+
+### How to send status code in Express:
+```javascript
+res.status(404).json({ message: "User not found" });
+res.status(201).json({ status: "success" });
+res.status(500).json({ status: "error" });
+```
+
+---
+
+## Headers
+
+Headers are **key-value pairs** sent with every HTTP request and response. They carry extra information about the request or response — like what format the data is in, who is sending it, or authentication tokens.
+
+### Request Headers (client → server)
+| Header | Purpose |
+|---|---|
+| `Content-Type` | Format of the data being sent |
+| `Authorization` | Token/credentials for authentication |
+| `Accept` | Format the client wants back |
+
+### Response Headers (server → client)
+| Header | Purpose |
+|---|---|
+| `Content-Type` | Format of the data being returned |
+| `Content-Length` | Size of the response body |
+
+### Common Content-Type Values
+| Value | Meaning |
+|---|---|
+| `application/json` | JSON data |
+| `text/html` | HTML page |
+| `multipart/form-data` | File uploads |
+| `application/x-www-form-urlencoded` | HTML form data |
+
+### How to set headers in Express:
+```javascript
+// Set a single header
+res.setHeader("Content-Type", "application/json");
+
+// Express shortcut — res.json() sets Content-Type automatically
+res.json({ message: "Hello" });
+
+// Set custom header
+res.setHeader("X-Custom-Header", "MyValue");
+```
+
+### How to read request headers in Express:
+```javascript
+const contentType = req.headers["content-type"];
+const token = req.headers["authorization"];
+```
+---
